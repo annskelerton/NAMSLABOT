@@ -1,6 +1,14 @@
 import discord
 from discord.ext import commands
 import random
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("token", help="BOT",
+                    type=str)
+args = parser.parse_args()
+
+
 
 description = '''An example bot to showcase the discord.ext.commands extension
 module.
@@ -59,5 +67,4 @@ async def cool(ctx):
 async def _bot():
     """Is the bot cool?"""
     await bot.say('Yes, the bot is cool.')
-
-bot.run('666')
+bot.run(args.token)
