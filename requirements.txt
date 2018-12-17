@@ -1,2 +1,7 @@
-discord.py
+discord.py[voice]
 asyncio
+peony-twitter[all]
+markovify
+re
+requests
+random
