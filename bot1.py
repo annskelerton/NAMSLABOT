@@ -10,6 +10,7 @@ import re
 import requests
 from configparser import ConfigParser
 import nltk
+nltk.download('brown')
 
 
 parser = ConfigParser()
@@ -150,13 +151,17 @@ async def on_message(message):
     love_ratio = 5
     love_ratio = int(parser.get('general', 'love_response_target'))
     do_post_image = 1 if (random.randint(1, love_ratio) <= love_check) else 0
-    print("markov response: %s, target is %s" % (rnd_result, to_hit) )
+    
     # I should be using command_prefix instead of 8=D here but I'll fix it l8r
     # i should also be printing only if not starts with command prefix but whatever
+    hellchannel = discord.Object(id=int(521848932280827925))
+    if(int(message.channel.id) == 521848932280827925):
+        rnd_result = 2069
+    print("markov response in server %s: %s, target is %s" % (message.channel.id, rnd_result, to_hit) )
     if (not message.content.startswith('8=D')) and rnd_result > to_hit and not do_post_image:
         mcontent = message.content
         # get rid of words that are less than 4 characters: (this somehow isnt working)
-        mcontent = re.sub(r'\b\w{1,3}\b', '', mcontent)
+        re.sub(r'\b\w{1,3}\b', '', mcontent)
         words = mcontent.split()
 
 
@@ -174,8 +179,26 @@ async def on_message(message):
         
         # next we're going to want to ...
         logs = bot.logs_from(message.channel, int(parser.get('general', 'chatdepth'))  )
-        chat_text = nltk.Text(chatword.lower() for chatword in logs)
-        similar_words = text.similar( target.lower() )
+        
+        
+        
+        comment_dec_24_nltk = '''
+        chatlog_v = []
+        async for item1 in logs:
+                if (not item1.author.id == bot.user.id) and (not item1.author.bot):
+                    chatlog_v.append(item1.content)
+        #chatlog_v = [msg.context for msg.context in logs] 
+        chat_text = nltk.Text(chatword.lower() for chatword in nltk.corpus.brown.words() ) 
+        #chat_text = nltk.Text(chatword.lower() for chatword in chatlog_v)
+        similar_words = []
+        similar_words = ' '.split(  chat_text.similar( target.lower() ) )
+        similar_words.append(target.lower())
+        print(similar_words)
+        '''
+        
+        
+        
+        
         #This will fail sometimes
         # next we're going to want to go another degree of a graph if we don't get a big enough corpus.  that is, if the target word yields
         # a small list to supply the text modeler, what we should do is the following:
@@ -186,8 +209,8 @@ async def on_message(message):
         cone = ''
         async for item in logs:
                 if (not item.author.id == bot.user.id) and (not item.author.bot):
-                    if any(tword in item.context.lower() for tword in similar_words):
-                    #if target.lower() in item.content.lower():
+                    #if any(tword in item.content.lower() for tword in similar_words) or target.lower() in item.content.lower():
+                    if target.lower() in item.content.lower():
                         cone = cone +random.choice(['\n', ' '])+ item.content
         print(cone)
         # the reason we add \n or ' ' is to make weird interactions with the markov generator.  i want the possibilty
