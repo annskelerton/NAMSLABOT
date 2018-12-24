@@ -5,3 +5,5 @@ markovify
 re
 requests
 random
+configparser
+nltk
