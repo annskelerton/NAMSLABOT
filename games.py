@@ -1,6 +1,8 @@
 '''NAMSLA'S SUPER BOT COMMANDS. Possum not a game.'''
 
 import random
+import re
+import string
 import discord
 from discord.ext import commands
 
@@ -33,8 +35,13 @@ class Games:
 
     @commands.command(description='For when you wanna settle the score some other way')
     async def choose(self, *choices: str):
+        sortedchoices = sorted(choices)
+        result =  all(elem in [x.lower() for x in ["cool","ranch","ranch"]]  for elem in [re.sub('[\W_]+', '', y.lower()) for y in sortedchoices] )
         """Chooses between multiple choices."""
-        await self.bot.say(random.choice(choices))
+        if not result:
+            await self.bot.say(random.choice(choices))
+        else:
+            await self.bot.say("You stupid bitch. you stupid fucking bitch")
 
     @commands.command()
     async def joined(self, member: discord.Member):

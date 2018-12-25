@@ -8,25 +8,32 @@ import discord
 from discord.ext import commands
 import markovify
 import requests
+from nltk import word_tokenize
 import nltk
 from peony import PeonyClient
 from games import Games
+import networkx as nx
+import numpy as np
+
 
 nltk.download('brown')
+nltk.download('punkt')
 
 parser = ConfigParser()
 parser.read('config.ini')
 
-
 user = parser.get('twitter', 'user')
+# to do: whitelist draw from config.ini
+whitelist = ["250040817366990848"]
 
 freeform = " help i am trapped in the computer and i am in hell this existence is hell. this is hell. this is sht.  "
 last_conversation_channel = None
 min_bg_seconds = int(parser.get('general', 'disability_awareness_min_time'))
 max_bg_seconds = int(parser.get('general', 'disability_awareness_max_time'))
 cur_bg_seconds = int(parser.get('general', 'disability_awareness_max_time'))
-runonce = 0
+runonce = int(parser.get('general', 'speak_on_start'))
 botuser = None
+botname = parser.get('general', 'botname' )
 
 # we should really set up a config file.
 
@@ -37,9 +44,8 @@ client = PeonyClient(
     access_token_secret=parser.get('twitter', 'asec'))
 
 
-description = '''An example bot to showcase the discord.ext.commands extension
-module.
-There are a number of utility commands being showcased here.'''
+description = '''NAMSLA's personal bot.
+Warning, under any circumstances, do not, and I repeat, do not'''
 bot = commands.Bot(command_prefix='8=D', description=description)
 
 
@@ -55,47 +61,75 @@ async def on_ready():
     activity = discord.Game(name="Team Fortress 2", type=1)
     await bot.change_presence(status=discord.Status.online, game=activity)
     print('------')
+    # twitter, not discord
     botuser = await client.user
 
 @asyncio.coroutine
 def nearby(character):
+    # we probably could have altered a spellcheck library for this
+    G=nx.Graph()
+    G.add_nodes_from("`1234567890-=qwertyuiop[]asdfghjkl;'zxcvbnm,./")
+    G.add_weighted_edges_from([('1','2',0.5), ('1','`',0.5), ('1','q',0.25)])
+    G.add_weighted_edges_from([('2','3',0.25), ('2','q',0.55), ('2','w',0.5)])
+    G.add_weighted_edges_from([('3','w',0.5), ('3','e',0.75), ('3','4',0.5)])
+    G.add_weighted_edges_from([('4','r',0.5), ('4','5',0.50)])
+    G.add_weighted_edges_from([('5','t',0.75), ('5','6',0.25), ('5','y',0.5)])
+    G.add_weighted_edges_from([('6','t',0.75), ('6','y',0.75), ('6','7',0.25)])
+    G.add_weighted_edges_from([('7','u',0.5), ('7','y',0.75), ('7','8',0.25)])
+    G.add_weighted_edges_from([('8','i',0.5), ('8','u',0.75), ('8','9',0.25)])
+    G.add_weighted_edges_from([('9','i',0.5), ('9','o',0.75), ('9','0',0.25)])
+    G.add_weighted_edges_from([('0','-',0.5), ('0','o',0.75), ('0','p',0.5)])
+    G.add_weighted_edges_from([('q','a',0.5), ('q','w',0.75), ('q','1',0.5), ('q','s',0.1)])
+    G.add_weighted_edges_from([('w','a',0.5), ('w','e',0.75), ('w','s',0.25), ('w', 'd', 0.1)])
+    G.add_weighted_edges_from([('e','d',0.5), ('e','r',0.75), ('e','f',0.10), ('e','t', 0.1)])
+    G.add_weighted_edges_from([('r','f',0.5), ('r','t',0.75), ('r','g',0.10), ('r','d', 0.25)])
+    G.add_weighted_edges_from([('t','g',0.5), ('t','y',0.75), ('t','f',0.10), ('t','h', 0.1)])
+    G.add_weighted_edges_from([('y','h',0.5), ('y','u',0.75), ('y','j',0.10), ('y','g', 0.1)])
+    G.add_weighted_edges_from([('u','j',0.5), ('u','i',0.75), ('u','h',0.10), ('u','k', 0.1)])
+    G.add_weighted_edges_from([('i','k',0.5), ('i','o',0.75), ('i','j',0.10), ('i','l', 0.1)])
+    G.add_weighted_edges_from([('o','l',0.5), ('o','p',0.75), ('o','k',0.10), ('o',';', 0.1)])
+    G.add_weighted_edges_from([('p',';',0.5), ('p','[',0.75), ('p','-',0.10), ('p','=', 0.05)])
+    G.add_weighted_edges_from([('a','z',0.5), ('a','s',0.75), ('a','x',0.10), ('a','', 0.1)]) # should try "next letter capitalize" maybe by ctrl char.
+    G.add_weighted_edges_from([('s','x',0.5), ('s','d',0.75), ('s','z',0.5), ('s','c', 0.1)])
+    G.add_weighted_edges_from([('d','x',0.5), ('d','f',0.75), ('d','c',0.50), ('d','v', 0.1)])
+    G.add_weighted_edges_from([('f','v',0.5), ('f','g',0.75), ('f','b',0.10), ('f','c', 0.5)])
+    G.add_weighted_edges_from([('g','b',0.5), ('g','h',0.75), ('g','v',0.5), ('g','b', 0.5)])
+    G.add_weighted_edges_from([('h','b',0.5), ('h','j',0.75), ('h','n',0.5), ('h','m', 0.1)])
+    G.add_weighted_edges_from([('j','n',0.5), ('j','k',0.75), ('j','m',0.5), ('j',',', 0.1)])
+    G.add_weighted_edges_from([('k','m',0.5), ('k','l',0.75), ('k',',',0.5), ('k','.', 0.1)])
+    G.add_weighted_edges_from([('l',',',0.5), ('l',';',0.75), ('l','.',0.5), ('l','/', 0.1)])
+    G.add_weighted_edges_from([(';','\'',0.5), (';','/',0.75), (';','.',0.50), (';','', 0.1)])
+    G.add_weighted_edges_from([('z',' ',0.1), ('z','x',0.75), ('z','',0.10)])
+    G.add_weighted_edges_from([('x','c',0.5), ('x',' ',0.25)])
+    G.add_weighted_edges_from([('v','b',0.5), ('v',' ',0.25)])
+    G.add_weighted_edges_from([('b','n',0.5), ('b',' ',0.75)])
+    G.add_weighted_edges_from([('n','m',0.5), ('n',' ',0.75)])
+    G.add_weighted_edges_from([('m',',',0.5), ('m',' ',0.50)])
+    G.add_weighted_edges_from([(',','.',0.5), (',',',,',0.25)])
+    G.add_weighted_edges_from([('.','/',0.5), ('.',' ',0.75), ('.','..',0.10)])
+    
+    character = character.lower()
     '''Switch some character with another randomly'''
-    replacement = ['', '.']
-    if character == 'a':
-        replacement = ['q', 's', 'z']
-    elif character == 'e':
-        replacement = ['r', 'r', 'z', 'w', '3', '3', '3']
-    elif character == 't':
-        replacement = ['r', 'r', 'y', '6', '5']
-    elif character == 'f':
-        replacement = ['g', 'r', 'd']
-    elif character == 'b':
-        replacement = ['n', 'v']
-    elif character == 'm':
-        replacement = ['n', ',']
-    elif character == 'o':
-        replacement = ['0', '9', 'p']
-    elif character == 'p':
-        replacement = ['0', '[', 'o', 'o', '0']
-    elif character == 'i':
-        replacement = ['8', 'u', 'o']
-    elif character == 'u':
-        replacement = ['i', '8', '7']
-    elif character == ' ':
-        replacement = ['.', '']
-    elif character == 'g':
-        replacement = ['f', 'h']
-    elif character == '.':
-        replacement = [',']
-    elif character == 'w':
-        replacement = ['e', 'q', '2', '2']
-    elif character == 'g':
-        replacement = ['f', 'h']
-    elif character == 'c':
-        replacement = ['x', 'v', 'd']
-    elif character == 's':
-        replacement = ['a', 'a', 'd', 'z', 'w', 'a']
-    return random.choice(replacement)
+    #replacement = ['', '.']
+    replacement = []
+    keyweights = []
+    # print(G[character])
+    for neighbor in G[character]:
+        # print(G[character][neighbor])
+        replacement.append(neighbor)
+        keyweights.append(G[character][neighbor]['weight'])
+    if not (keyweights and replacement):
+        replacement = ['', '.']
+        keyweights = [0.5, 0.5]
+    
+    newkey = random.choices(
+     population=replacement,
+     weights=keyweights,
+     k=1
+    )
+    newkey = newkey[0]
+    # print(newkey)
+    yield newkey
     # TODO: should streamline this
     # Consider using a hashmap;
     # { chr: replacements }
@@ -118,6 +152,7 @@ async def my_background_task():
 
     runonce = 1
 
+    # do another one of those for server.time_since_last_message or something so it can say 'hey'
 
 @bot.event
 async def on_message(message):
@@ -159,14 +194,15 @@ async def on_message(message):
             if i.lower() in message.content.lower():
                 love_check = love_check + 1
                 to_hit = int(parser.get('general', 'love_response_target'))
-    #do_post_image = (1/0, 2)[ (random.randint(0, 10) <= love_check) ]
-	# false value, true value.
-    #do_post_image = (0, 1)[ (random.randint(1, 10) <= love_check) ]
+    #if botname in message.content.lower():
+    my_regex = r"\b" + re.escape(botname) + r"\b"
+    if re.search(my_regex, message.content.lower()) :
+        to_hit = int(parser.get('general', 'mention_response_target'))
     do_post_image = 0
     if love_check > 3:
         love_check = 3
     love_ratio = 5
-    love_ratio = int(parser.get('general', 'love_response_target'))
+    love_ratio = int(parser.get('general', 'love_ratio'))
     do_post_image = 1 if (random.randint(1, love_ratio) <= love_check) else 0
 
     # I should be using command_prefix instead of 8=D here but I'll fix it l8r
@@ -178,7 +214,7 @@ async def on_message(message):
     if (not message.content.startswith('8=D')) and rnd_result > to_hit and not do_post_image:
         mcontent = message.content
         # get rid of words that are less than 4 characters: (this somehow isnt working)
-        re.sub(r'\b\w{1,3}\b', '', mcontent)
+        re.sub(r'\b\w{1,3}\b', '', mcontent) # still not working
         words = mcontent.split()
 
 
@@ -222,10 +258,16 @@ async def on_message(message):
         cone = ''
         async for item in logs:
                 if (not item.author.id == bot.user.id) and (not item.author.bot):
+                    context_text = mcontent + ' ' + item.content
+                    short_text = nltk.Text(word_tokenize(context_text))
+                    similar_words = []
+                    similar_words = ' '.split( short_text.similar(target) )
+                    similar_words.append(target.lower() )
                     #if any(tword in item.content.lower() for tword in similar_words) or target.lower() in item.content.lower():
-                    if target.lower() in item.content.lower():
+                    if any(sim.lower() in item.content.lower() for sim in similar_words) or target.lower() in item.content.lower():
                         cone = cone +random.choice(['\n', ' '])+ item.content
-        print(cone)
+        # print(cone)
+        
         # the reason we add \n or ' ' is to make weird interactions with the markov generator.  i want the possibilty
         # of retrieving posts that are right after one another as if they're in the same context.
         # what I should really do is use some kind of statistical analysis formula that checks what is usually said
@@ -242,23 +284,28 @@ async def on_message(message):
             await bot.send_message(message.channel, "%s" % ra)
         else:
             # this is what happens if we don't get a valid message.  Let's try something else.
-            lines = [line.rstrip('\n') for line in open('master-lyrics.txt')]
+            lines = [line.strip('\n') for line in open('master-lyrics.txt')]
             lyric = random.choice(lines)
+            if not lyric:
+                lyric = 'nice'
+            print("lyric: %s" % lyric)
             # now we have to make it type like adcat
             inds = [i for i,_ in enumerate(lyric)]
-            brainfog = random.randint(1, len(lyric) - 1)
+            brainfog = random.randint(0, (len(str(lyric)) - 1) // 4)
             sam = random.sample(inds, brainfog)
-            lst = list(lyric)
+            lst = [i for _,i in enumerate(lyric)]
+            print(inds)
             for ind in sam:
                 #lst[ind] = random.choice(ascii_letters)
-                lst[ind] = str(nearby(lst[ind]))
+                lst[ind] = ''.join(nearby(str(lst[ind])))
 			# nothing with length less than 3 anyway
             for i in range(2,len(lst)-1): 
-                if random.randint(1,10) > 7:
+                if random.randint(1,10) > 9:
                     lst[i], lst[i+1] = lst[i+1], lst[i]
             lyrics_out = "nice"
-            lst = list(lst)
+            #lst = list(lst)
             print(lst)
+            lst = [x for x in lst if x]
             if random.randint(1,10) > 5: 
                 lyrics_out = (''.join(lst))
                 lyrics_out = lyrics_out.lower()
@@ -287,11 +334,16 @@ def markovg(given):
         else:
             return "you should start drinking"
 
+def is_in_server_list(server_list):
+    def predicate(ctx):
+        return ctx.message.server.id in server_list
+    return commands.check(predicate)
 
 @bot.command(pass_context = True)
 @commands.has_any_role("Purple", "The Boss of this Gym", "Green", "Loli's Group")
+@is_in_server_list(whitelist)
 async def tweet(ctx, *, garbage:str = "DICKS EVERYWHERE"):
-        """Causes 8frontflips to tweet."""
+        """Causes 8frontflips to tweet (NAMSLA SERVER ONLY)"""
         print("Handling: %s" % garbage)
 
         botuser = await client.user

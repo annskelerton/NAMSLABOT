@@ -5,3 +5,5 @@ markovify
 requests
 configparser
 nltk
+networkx
+numpy
