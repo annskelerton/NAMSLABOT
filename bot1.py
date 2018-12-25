@@ -1,21 +1,22 @@
-import discord
-from discord.ext import commands
+'''NAMSLA'S SUPER BOT. Likes Racoons'''
+
 import random
 import asyncio
-import argparse
-from peony import PeonyClient
-import peony.iterators
-import markovify
 import re
-import requests
 from configparser import ConfigParser
+import discord
+from discord.ext import commands
+import markovify
+import requests
 import nltk
-nltk.download('brown')
+from peony import PeonyClient
+from games import Games
 
+nltk.download('brown')
 
 parser = ConfigParser()
 parser.read('config.ini')
-																	
+
 
 user = parser.get('twitter', 'user')
 
@@ -29,11 +30,12 @@ botuser = None
 
 # we should really set up a config file.
 
-client= PeonyClient(consumer_key=parser.get('twitter', 'ckey'),
+client = PeonyClient(
+    consumer_key=parser.get('twitter', 'ckey'),
     consumer_secret=parser.get('twitter', 'csec'),
     access_token=parser.get('twitter', 'akey'),
     access_token_secret=parser.get('twitter', 'asec'))
-  
+
 
 description = '''An example bot to showcase the discord.ext.commands extension
 module.
@@ -43,6 +45,7 @@ bot = commands.Bot(command_prefix='8=D', description=description)
 
 @bot.event
 async def on_ready():
+    '''Runs once the bot is ready.'''
     runonce = 0
     print('Logged in as')
     print(bot.user.name)
@@ -55,81 +58,95 @@ async def on_ready():
     botuser = await client.user
 
 @asyncio.coroutine
-def nearby(w):
+def nearby(character):
+    '''Switch some character with another randomly'''
     replacement = ['', '.']
-    if w is 'a':
+    if character == 'a':
         replacement = ['q', 's', 'z']
-    if w is 'e':
-        replacement = ['r', 'r', 'z', 'w', '3','3','3']
-    if w is 't':
+    elif character == 'e':
+        replacement = ['r', 'r', 'z', 'w', '3', '3', '3']
+    elif character == 't':
         replacement = ['r', 'r', 'y', '6', '5']
-    if w is 'f':
+    elif character == 'f':
         replacement = ['g', 'r', 'd']
-    if w is 'b':
+    elif character == 'b':
         replacement = ['n', 'v']
-    if w is 'm':
+    elif character == 'm':
         replacement = ['n', ',']
-    if w is 'o':
+    elif character == 'o':
         replacement = ['0', '9', 'p']
-    if w is 'p':
+    elif character == 'p':
         replacement = ['0', '[', 'o', 'o', '0']
-    if w is 'i':
+    elif character == 'i':
         replacement = ['8', 'u', 'o']
-    if w is 'u':
+    elif character == 'u':
         replacement = ['i', '8', '7']
-    if w is ' ':
-        replacement = ['.','']
-    if w is 'g':
+    elif character == ' ':
+        replacement = ['.', '']
+    elif character == 'g':
         replacement = ['f', 'h']
-    if w is '.':
+    elif character == '.':
         replacement = [',']
-    if w is 'w':
+    elif character == 'w':
         replacement = ['e', 'q', '2', '2']
-    if w is 'g':
+    elif character == 'g':
         replacement = ['f', 'h']
-    if w is 'c':
-        replacement = ['x','v','d']
-    if w is 's':
-        replacement = ['a', 'a', 'd', 'z','w','a']
+    elif character == 'c':
+        replacement = ['x', 'v', 'd']
+    elif character == 's':
+        replacement = ['a', 'a', 'd', 'z', 'w', 'a']
     return random.choice(replacement)
-    #should streamline this
-	
-@asyncio.coroutine
-def findWholeWord(w):
-    return re.compile(r'\b({0})\b'.format(w), flags=re.IGNORECASE).search
-    #stolen from reddit
-	
+    # TODO: should streamline this
+    # Consider using a hashmap;
+    # { chr: replacements }
+    # Then you could do hashmap[character] instead of this.
+
 # have bot occasionally say "i am disabled"
 # rand 3600 to 172800 : between 1 hour and 2 days
 
 async def my_background_task():
+    '''Beautifully named function.'''
     global runonce
     await bot.wait_until_ready()
-    channel = discord.Object(  id=int(parser.get('discord', 'channel_id'))  )
+    channel = discord.Object(id=int(parser.get('discord', 'channel_id')))
     # channel = last_conversation_channel
     while not bot.is_closed and runonce > 0:
-
-            cur_bg_seconds = random.randint(min_bg_seconds, max_bg_seconds)
-            print('disability awareness')
-            await bot.send_message(channel, "I am disabled")
-            await asyncio.sleep(cur_bg_seconds) # task runs every rand seconds
+        cur_bg_seconds = random.randint(min_bg_seconds, max_bg_seconds)
+        print('disability awareness')
+        await bot.send_message(channel, "I am disabled")
+        await asyncio.sleep(cur_bg_seconds) # task runs every rand seconds
 
     runonce = 1
 
 
 @bot.event
 async def on_message(message):
+    '''Every time it reads a message.'''
     if message.author == bot.user:
         return
     if not message.content:
         return
     # keywords should be drawn from a file.
-    keywords = ["adcat", "penis", "anime", "disabled", "brain", "help", "slime", "fursuit", "wheelchair", "wife", "adbot"]
+    keywords = [
+        "adcat",
+        "penis",
+        "anime",
+        "disabled",
+        "brain",
+        "help",
+        "slime",
+        "fursuit",
+        "wheelchair",
+        "wife",
+        "adbot"
+    ]
     loved_words = parser.get('general', 'loved_words').split(',')
     last_conversation_channel = message.channel
-    # next thing to do would be to set easier targets by context, e.g. run target choice from words or check all words
-    # here, and say make it 1/100 for "slime" 1/30 for "adcat" , 1/5 for "penis" (not rly exactly that)
-    rnd_result = random.randint(1,  int(parser.get('general', 'response_range'))  )
+    # next thing to do would be to set easier targets by context,
+    # e.g. run target choice from words or check all words
+    # here, and say make it 1/100 for "slime" 1/30 for "adcat",
+    # 1/5 for "penis" (not rly exactly that)
+    rnd_result = random.randint(1, int(parser.get('general', 'response_range')))
     # default: must hit 2057 or greater
     to_hit = int(parser.get('general', 'def_response_target'))
     multiplier = (float(1.0))
@@ -151,11 +168,11 @@ async def on_message(message):
     love_ratio = 5
     love_ratio = int(parser.get('general', 'love_response_target'))
     do_post_image = 1 if (random.randint(1, love_ratio) <= love_check) else 0
-    
+
     # I should be using command_prefix instead of 8=D here but I'll fix it l8r
     # i should also be printing only if not starts with command prefix but whatever
     hellchannel = discord.Object(id=int(521848932280827925))
-    if(int(message.channel.id) == 521848932280827925):
+    if int(message.channel.id) == 521848932280827925:
         rnd_result = 2069
     print("markov response in server %s: %s, target is %s" % (message.channel.id, rnd_result, to_hit) )
     if (not message.content.startswith('8=D')) and rnd_result > to_hit and not do_post_image:
@@ -195,10 +212,6 @@ async def on_message(message):
         similar_words.append(target.lower())
         print(similar_words)
         '''
-        
-        
-        
-        
         #This will fail sometimes
         # next we're going to want to go another degree of a graph if we don't get a big enough corpus.  that is, if the target word yields
         # a small list to supply the text modeler, what we should do is the following:
@@ -281,7 +294,6 @@ async def tweet(ctx, *, garbage:str = "DICKS EVERYWHERE"):
         """Causes 8frontflips to tweet."""
         print("Handling: %s" % garbage)
 
-		
         botuser = await client.user
         id = botuser.id
         #status = client.api.statuses.user_timeline.get(user_id=id, count=1) 
@@ -317,9 +329,6 @@ async def tweet(ctx, *, garbage:str = "DICKS EVERYWHERE"):
         except Exception as e:
             failstring = str(e)
             failed = 1
-        
-        
-        
         ## status = await client.api.statuses.home_timeline.get(count=1)
         request = await client.api.statuses.user_timeline.get(user_id=id,
                                                     count=1,
@@ -328,7 +337,6 @@ async def tweet(ctx, *, garbage:str = "DICKS EVERYWHERE"):
         # status = request.iterator.with_max_id()
 
         cum = request[0]['id_str']
-			
         # the 'cum' variable is the id of the last post.
         # technically this is the wrong way to do things because i don't check to see if the bot posted at all,
         # and because i didn't check what the last id was before the post.
@@ -343,43 +351,7 @@ async def tweet(ctx, *, garbage:str = "DICKS EVERYWHERE"):
         else:
             await bot.say("HARBL/69-303 **MESSAGE FAILED** (UNKNOWN) LAST POST: \U000022B7 https://twitter.com/8frontflips/status/%s" % cum)
 
-	
-
-@bot.command()
-async def add(left: int, right: int):
-    """Adds two numbers together."""
-    await bot.say(left + right)
-
-
-@bot.command()
-async def roll(dice: str):
-    """Rolls a dice in NdN format."""
-    try:
-        rolls, limit = map(int, dice.split('d'))
-    except Exception:
-        await bot.say('Format has to be in NdN!')
-        return
-
-    result = ', '.join(str(random.randint(1, limit)) for r in range(rolls))
-    await bot.say(result)
-
-
-@bot.command(description='For when you wanna settle the score some other way')
-async def choose(*choices: str):
-    """Chooses between multiple choices."""
-    await bot.say(random.choice(choices))
-
-
-
-
-@bot.command()
-async def joined(member: discord.Member):
-    """Says when a member joined."""
-    await bot.say('{0.name} ==> {0.joined_at} (WARNING)'.format(member))
-
-
 
 bot.loop.create_task(my_background_task())
-bot.run(  parser.get('discord', 'token')  )
-
-
+bot.add_cog(Games(bot))
+bot.run(parser.get('discord', 'token'))
