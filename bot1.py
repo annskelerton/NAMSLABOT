@@ -10,6 +10,7 @@ import markovify
 import requests
 import nltk
 from peony import PeonyClient
+from games import Games
 
 nltk.download('brown')
 
@@ -351,39 +352,6 @@ async def tweet(ctx, *, garbage:str = "DICKS EVERYWHERE"):
             await bot.say("HARBL/69-303 **MESSAGE FAILED** (UNKNOWN) LAST POST: \U000022B7 https://twitter.com/8frontflips/status/%s" % cum)
 
 
-@bot.command()
-async def add(left: int, right: int):
-    """Adds two numbers together."""
-    await bot.say(left + right)
-
-
-@bot.command()
-async def roll(dice: str):
-    """Rolls a dice in NdN format."""
-    try:
-        rolls, limit = map(int, dice.split('d'))
-    except Exception:
-        await bot.say('Format has to be in NdN!')
-        return
-
-    result = ', '.join(str(random.randint(1, limit)) for r in range(rolls))
-    await bot.say(result)
-
-
-@bot.command(description='For when you wanna settle the score some other way')
-async def choose(*choices: str):
-    """Chooses between multiple choices."""
-    await bot.say(random.choice(choices))
-
-
-
-
-@bot.command()
-async def joined(member: discord.Member):
-    """Says when a member joined."""
-    await bot.say('{0.name} ==> {0.joined_at} (WARNING)'.format(member))
-
-
-
 bot.loop.create_task(my_background_task())
+bot.add_cog(Games(bot))
 bot.run(parser.get('discord', 'token'))
