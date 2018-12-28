@@ -35,9 +35,10 @@ class Games:
 
     @commands.command(description='For when you wanna settle the score some other way')
     async def choose(self, *choices: str):
+        """Chooses between multiple choices."""
         sortedchoices = sorted(choices)
         result =  all(elem in [x.lower() for x in ["cool","ranch","ranch"]]  for elem in [re.sub('[\W_]+', '', y.lower()) for y in sortedchoices] )
-        """Chooses between multiple choices."""
+        
         if not result:
             await self.bot.say(random.choice(choices))
         else:
