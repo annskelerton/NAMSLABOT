@@ -7,3 +7,6 @@ configparser
 nltk
 networkx
 numpy
+pickle
+tensorflow
+tflearn
